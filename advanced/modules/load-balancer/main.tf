@@ -1,6 +1,10 @@
+locals {
+  https_enabled = var.domain_name != null && var.route53_zone_name != null
+}
+
 resource "aws_security_group" "alb" {
   name        = "${var.name}-alb-sg"
-  description = "Allow public HTTP traffic to the Application Load Balancer"
+  description = "Allow public web traffic to the Application Load Balancer"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -9,6 +13,17 @@ resource "aws_security_group" "alb" {
     to_port     = var.listener_port
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  dynamic "ingress" {
+    for_each = local.https_enabled ? [1] : []
+    content {
+      description = "Public HTTPS"
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
 
   egress {
@@ -87,10 +102,98 @@ resource "aws_lb_target_group" "app" {
   })
 }
 
-resource "aws_lb_listener" "http" {
+data "aws_route53_zone" "selected" {
+  count        = local.https_enabled ? 1 : 0
+  name         = var.route53_zone_name
+  private_zone = false
+}
+
+resource "aws_acm_certificate" "this" {
+  count             = local.https_enabled ? 1 : 0
+  domain_name       = var.domain_name
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.name}-certificate"
+  })
+}
+
+resource "aws_route53_record" "certificate_validation" {
+  for_each = local.https_enabled ? {
+    for option in aws_acm_certificate.this[0].domain_validation_options : option.domain_name => {
+      name   = option.resource_record_name
+      record = option.resource_record_value
+      type   = option.resource_record_type
+    }
+  } : {}
+
+  allow_overwrite = true
+  zone_id         = data.aws_route53_zone.selected[0].zone_id
+  name            = each.value.name
+  type            = each.value.type
+  ttl             = 60
+  records         = [each.value.record]
+}
+
+resource "aws_acm_certificate_validation" "this" {
+  count                   = local.https_enabled ? 1 : 0
+  certificate_arn         = aws_acm_certificate.this[0].arn
+  validation_record_fqdns = [for record in aws_route53_record.certificate_validation : record.fqdn]
+}
+
+resource "aws_route53_record" "application" {
+  count   = local.https_enabled ? 1 : 0
+  zone_id = data.aws_route53_zone.selected[0].zone_id
+  name    = var.domain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.this.dns_name
+    zone_id                = aws_lb.this.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_lb_listener" "http_forward" {
+  count             = local.https_enabled ? 0 : 1
   load_balancer_arn = aws_lb.this.arn
   port              = var.listener_port
   protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app.arn
+  }
+}
+
+resource "aws_lb_listener" "http_redirect" {
+  count             = local.https_enabled ? 1 : 0
+  load_balancer_arn = aws_lb.this.arn
+  port              = var.listener_port
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
+resource "aws_lb_listener" "https" {
+  count             = local.https_enabled ? 1 : 0
+  load_balancer_arn = aws_lb.this.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = aws_acm_certificate_validation.this[0].certificate_arn
 
   default_action {
     type             = "forward"
