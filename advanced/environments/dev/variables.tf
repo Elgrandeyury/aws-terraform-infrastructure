@@ -92,3 +92,17 @@ variable "db_max_allocated_storage" {
   type        = number
   default     = 100
 }
+
+variable "domain_name" {
+  description = "Optional application domain name. Leave null to use the ALB DNS name over HTTP."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "route53_zone_name" {
+  description = "Optional existing public Route53 hosted zone name used for DNS validation and the application alias record."
+  type        = string
+  default     = null
+  nullable    = true
+}
