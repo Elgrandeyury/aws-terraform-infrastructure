@@ -24,6 +24,8 @@ module "load_balancer" {
   listener_port     = 80
   target_port       = 80
   health_check_path = "/"
+  domain_name       = var.domain_name
+  route53_zone_name = var.route53_zone_name
 
   tags = {
     Environment = "dev"
