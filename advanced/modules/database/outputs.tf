@@ -18,6 +18,11 @@ output "db_instance_arn" {
   value       = aws_db_instance.this.arn
 }
 
+output "db_instance_identifier" {
+  description = "Identifier of the RDS instance."
+  value       = aws_db_instance.this.identifier
+}
+
 output "db_security_group_id" {
   description = "Security group protecting the database tier."
   value       = aws_security_group.database.id
