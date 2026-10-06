@@ -87,3 +87,17 @@ module "storage" {
     Portfolio   = "true"
   }
 }
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  name                         = var.project_name
+  autoscaling_group_name       = module.compute.autoscaling_group_name
+  db_instance_identifier       = module.database.db_instance_identifier
+  minimum_in_service_instances = var.asg_min_size
+
+  tags = {
+    Environment = "dev"
+    Portfolio   = "true"
+  }
+}
