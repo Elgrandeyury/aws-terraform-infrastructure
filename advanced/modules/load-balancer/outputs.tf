@@ -27,3 +27,18 @@ output "app_security_group_id" {
   description = "Security group ID intended for application instances."
   value       = aws_security_group.app.id
 }
+
+output "https_enabled" {
+  description = "Whether Route53 + ACM HTTPS is enabled."
+  value       = local.https_enabled
+}
+
+output "application_url" {
+  description = "Preferred application URL."
+  value       = local.https_enabled ? "https://${var.domain_name}" : "http://${aws_lb.this.dns_name}"
+}
+
+output "certificate_arn" {
+  description = "ACM certificate ARN when HTTPS is enabled."
+  value       = local.https_enabled ? aws_acm_certificate.this[0].arn : null
+}
