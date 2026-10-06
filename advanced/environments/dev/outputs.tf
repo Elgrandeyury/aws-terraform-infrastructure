@@ -62,3 +62,11 @@ output "db_master_secret_arn" {
   value     = module.database.master_user_secret_arn
   sensitive = true
 }
+
+output "efs_file_system_id" {
+  value = module.storage.file_system_id
+}
+
+output "efs_security_group_id" {
+  value = module.storage.security_group_id
+}
