@@ -1,0 +1,46 @@
+name: Terraform CI
+
+on:
+  push:
+    paths:
+      - "**/*.tf"
+      - ".github/workflows/terraform-ci.yml"
+  pull_request:
+    paths:
+      - "**/*.tf"
+      - ".github/workflows/terraform-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Format check
+        run: terraform fmt -check -recursive
+
+      - name: Initialize advanced dev configuration
+        working-directory: advanced/environments/dev
+        run: terraform init -backend=false
+
+      - name: Validate advanced dev configuration
+        working-directory: advanced/environments/dev
+        run: terraform validate
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: advanced
+          framework: terraform
+          quiet: true
+          soft_fail: true
