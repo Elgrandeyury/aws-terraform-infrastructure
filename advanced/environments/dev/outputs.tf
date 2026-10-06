@@ -22,6 +22,14 @@ output "alb_dns_name" {
   value = module.load_balancer.alb_dns_name
 }
 
+output "application_url" {
+  value = module.load_balancer.application_url
+}
+
+output "https_enabled" {
+  value = module.load_balancer.https_enabled
+}
+
 output "target_group_arn" {
   value = module.load_balancer.target_group_arn
 }
@@ -69,4 +77,8 @@ output "efs_file_system_id" {
 
 output "efs_security_group_id" {
   value = module.storage.security_group_id
+}
+
+output "cloudwatch_alarm_names" {
+  value = module.monitoring.alarm_names
 }
