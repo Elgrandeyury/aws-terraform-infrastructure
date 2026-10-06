@@ -62,3 +62,33 @@ variable "asg_max_size" {
   type        = number
   default     = 4
 }
+
+variable "db_instance_class" {
+  description = "RDS instance class."
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "database_name" {
+  description = "Initial PostgreSQL database name."
+  type        = string
+  default     = "appdb"
+}
+
+variable "db_master_username" {
+  description = "Master username for PostgreSQL. The password is generated and managed by AWS Secrets Manager."
+  type        = string
+  default     = "dbadmin"
+}
+
+variable "db_allocated_storage" {
+  description = "Initial RDS storage allocation in GiB."
+  type        = number
+  default     = 20
+}
+
+variable "db_max_allocated_storage" {
+  description = "Maximum RDS storage allocation for storage autoscaling."
+  type        = number
+  default     = 100
+}
