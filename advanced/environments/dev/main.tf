@@ -73,3 +73,17 @@ module "database" {
     Portfolio   = "true"
   }
 }
+
+module "storage" {
+  source = "../../modules/storage"
+
+  name                  = var.project_name
+  vpc_id                = module.networking.vpc_id
+  subnet_ids            = module.networking.app_subnet_ids
+  app_security_group_id = module.load_balancer.app_security_group_id
+
+  tags = {
+    Environment = "dev"
+    Portfolio   = "true"
+  }
+}
