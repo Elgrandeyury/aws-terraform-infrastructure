@@ -19,7 +19,7 @@ variable "public_subnet_ids" {
 }
 
 variable "listener_port" {
-  description = "Public listener port."
+  description = "Public HTTP listener port."
   type        = number
   default     = 80
 }
@@ -34,6 +34,20 @@ variable "health_check_path" {
   description = "HTTP path used for target health checks."
   type        = string
   default     = "/"
+}
+
+variable "domain_name" {
+  description = "Optional application DNS name. When set with route53_zone_name, ACM HTTPS and Route53 aliasing are enabled."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "route53_zone_name" {
+  description = "Optional existing public Route53 hosted zone name, for example example.com."
+  type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "tags" {
