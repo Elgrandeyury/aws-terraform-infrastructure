@@ -1,89 +1,148 @@
-# AWS Infrastructure with Terraform
+# AWS Production-Style Infrastructure with Terraform
 
-Infrastructure as Code project for deploying a simple AWS web workload with Terraform.
+Production-inspired Infrastructure as Code project demonstrating a highly available AWS web platform built with reusable Terraform modules.
 
-## Architecture
+> **Portfolio status:** architecture and Terraform implementation are prepared in the repository. Deployment is **not claimed as verified** until the stack is successfully applied and tested in an AWS account.
+
+## Advanced architecture
 
 ```mermaid
 flowchart TB
-    Internet((Internet)) --> IGW[Internet Gateway]
-    IGW --> RT[Public Route Table]
-    RT --> Subnet[Public Subnet]
-    Subnet --> SG[Security Group]
-    SG --> EC2[EC2 Instance]
-    EC2 --> Nginx[Nginx Web Server]
+    Users((Users)) --> ALB[Application Load Balancer]
+
+    subgraph VPC[AWS VPC - 2 Availability Zones]
+        direction TB
+
+        subgraph Public[Public Subnets]
+            ALB
+            NAT1[NAT Gateway AZ1]
+            NAT2[NAT Gateway AZ2]
+        end
+
+        subgraph App[Private Application Subnets]
+            ASG[Auto Scaling Group]
+            EC21[EC2 App Instance]
+            EC22[EC2 App Instance]
+            ASG --> EC21
+            ASG --> EC22
+        end
+
+        subgraph Data[Private Data Layer]
+            RDS[(RDS PostgreSQL Multi-AZ)]
+            EFS[(Encrypted EFS)]
+        end
+
+        ALB --> EC21
+        ALB --> EC22
+        EC21 --> RDS
+        EC22 --> RDS
+        EC21 --> EFS
+        EC22 --> EFS
+        EC21 --> NAT1
+        EC22 --> NAT2
+    end
 ```
 
-## What this project defines
+## What the advanced implementation includes
 
-- AWS provider configuration
-- VPC
-- public subnet
-- internet gateway
-- public route table and association
-- security group allowing HTTP
-- EC2 instance
-- automated Nginx installation with `user_data`
-- Terraform outputs for the public IP and web URL
+- VPC spanning two Availability Zones
+- two public subnets
+- two private application subnets
+- two private data subnets
+- Internet Gateway and public routing
+- NAT Gateway per Availability Zone
+- Application Load Balancer
+- isolated ALB and application security groups
+- EC2 Launch Template
+- Auto Scaling Group across private application subnets
+- target-tracking CPU scaling policy
+- Amazon Linux 2023 AMI discovery
+- IMDSv2 enforcement
+- encrypted gp3 root volumes
+- IAM instance profile with Systems Manager access
+- PostgreSQL RDS Multi-AZ
+- encrypted database storage and storage autoscaling
+- AWS-managed RDS master password through Secrets Manager
+- encrypted EFS with mount targets across application subnets
+- security-group-to-security-group access for database and NFS traffic
+- GitHub Actions Terraform formatting and validation
+- Checkov Terraform security scanning
 
 ## Repository structure
 
 ```text
 aws-terraform-infrastructure/
-├── README.md
-├── .gitignore
-├── terraform/
-│   ├── versions.tf
-│   ├── variables.tf
-│   ├── main.tf
-│   ├── outputs.tf
-│   └── terraform.tfvars.example
-└── docs/
-    └── architecture.md
+├── advanced/
+│   ├── environments/
+│   │   └── dev/
+│   └── modules/
+│       ├── networking/
+│       ├── load-balancer/
+│       ├── compute/
+│       ├── database/
+│       └── storage/
+├── terraform/                 # smaller baseline implementation
+├── docs/
+│   ├── architecture.md
+│   └── advanced-architecture.md
+└── .github/workflows/
+    └── terraform-ci.yml
 ```
 
-## Terraform workflow
+## Engineering decisions
+
+### Private application tier
+
+The load balancer is internet-facing, while EC2 application instances remain in private subnets. The application security group accepts application traffic from the ALB security group rather than from the public internet.
+
+### Multi-AZ design
+
+Networking, compute, database, and shared storage are designed across two Availability Zones to reduce reliance on a single failure domain.
+
+### No SSH dependency
+
+Application instances are designed without requiring public SSH access. The instance role includes AWS Systems Manager access for operational management.
+
+### Managed database credentials
+
+The RDS master password is managed by AWS rather than stored in Terraform source code.
+
+### Modular Terraform
+
+The advanced environment composes separate modules for networking, traffic management, compute, database, and storage instead of placing the entire platform in one file.
+
+## CI / security checks
+
+GitHub Actions runs Terraform formatting and validation against the advanced environment and executes Checkov against the Terraform code.
+
+The workflow does **not** deploy infrastructure and does not require AWS credentials.
+
+## Running the advanced configuration
 
 ```bash
-cd terraform
+cd advanced/environments/dev
 terraform init
 terraform fmt
 terraform validate
 terraform plan
-terraform apply
 ```
 
-After testing the deployment:
+Only run `terraform apply` in an AWS account where you understand and accept the cost of the resources being created.
+
+## Cost warning
+
+This advanced architecture can generate meaningful AWS charges. In particular, **NAT Gateways, the Application Load Balancer, EC2, RDS Multi-AZ, EFS, and public IPv4 usage may incur costs**. Destroy test infrastructure when it is no longer needed.
 
 ```bash
 terraform destroy
 ```
 
-## Configuration
+## Baseline implementation
 
-Copy the example variables file if you want to override defaults:
+The original `terraform/` directory remains in the repository as a smaller VPC + EC2 demonstration. The `advanced/` directory is the main portfolio architecture.
 
-```bash
-cp terraform.tfvars.example terraform.tfvars
-```
+## Current status
 
-Do not commit credentials, `.tfstate` files, or local Terraform working directories.
+**Advanced Terraform implementation: repository-complete / deployment unverified.**
 
-## Security notes
-
-This is a portfolio/demo architecture rather than a production reference architecture.
-
-- HTTP port 80 is open publicly so the demo web page can be reached.
-- SSH is not opened by default.
-- AWS credentials are expected to be provided through the normal AWS provider credential chain, not hard-coded in Terraform.
-- Terraform state is ignored by Git in this repository.
-
-## Cost awareness
-
-Creating AWS resources can incur charges. The configuration is intentionally small, and resources should be destroyed after testing when they are no longer needed.
-
-## Status
-
-**Infrastructure code prepared.**
-
-This repository documents the Terraform configuration and architecture. A deployment should only be marked as verified once the configuration has been successfully applied in an AWS account and the resulting endpoint has been tested.
+The code demonstrates the architecture and engineering approach without pretending that an AWS deployment has already been successfully validated. Once the stack is deployed, the next evidence to add should be real outputs such as an ALB endpoint, healthy target state, Auto Scaling activity, CloudWatch evidence, and sanitized deployment screenshots.
