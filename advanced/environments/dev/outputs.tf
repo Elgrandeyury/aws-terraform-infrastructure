@@ -33,3 +33,15 @@ output "alb_security_group_id" {
 output "app_security_group_id" {
   value = module.load_balancer.app_security_group_id
 }
+
+output "autoscaling_group_name" {
+  value = module.compute.autoscaling_group_name
+}
+
+output "launch_template_id" {
+  value = module.compute.launch_template_id
+}
+
+output "compute_iam_role_name" {
+  value = module.compute.iam_role_name
+}
