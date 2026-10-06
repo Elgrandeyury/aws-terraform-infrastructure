@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - "**/*.tf"
+      - "**/*.hcl"
       - ".github/workflows/terraform-ci.yml"
   pull_request:
     paths:
       - "**/*.tf"
+      - "**/*.hcl"
       - ".github/workflows/terraform-ci.yml"
 
 permissions:
@@ -28,6 +30,14 @@ jobs:
 
       - name: Format check
         run: terraform fmt -check -recursive
+
+      - name: Initialize state bootstrap
+        working-directory: advanced/bootstrap/state
+        run: terraform init -backend=false
+
+      - name: Validate state bootstrap
+        working-directory: advanced/bootstrap/state
+        run: terraform validate
 
       - name: Initialize advanced dev configuration
         working-directory: advanced/environments/dev
