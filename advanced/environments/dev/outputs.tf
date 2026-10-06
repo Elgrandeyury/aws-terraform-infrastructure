@@ -17,3 +17,19 @@ output "data_subnet_ids" {
 output "nat_gateway_ids" {
   value = module.networking.nat_gateway_ids
 }
+
+output "alb_dns_name" {
+  value = module.load_balancer.alb_dns_name
+}
+
+output "target_group_arn" {
+  value = module.load_balancer.target_group_arn
+}
+
+output "alb_security_group_id" {
+  value = module.load_balancer.alb_security_group_id
+}
+
+output "app_security_group_id" {
+  value = module.load_balancer.app_security_group_id
+}
