@@ -49,3 +49,27 @@ module "compute" {
     Portfolio   = "true"
   }
 }
+
+module "database" {
+  source = "../../modules/database"
+
+  name                  = var.project_name
+  vpc_id                = module.networking.vpc_id
+  data_subnet_ids       = module.networking.data_subnet_ids
+  app_security_group_id = module.load_balancer.app_security_group_id
+
+  engine                = "postgres"
+  instance_class        = var.db_instance_class
+  database_name         = var.database_name
+  master_username       = var.db_master_username
+  allocated_storage     = var.db_allocated_storage
+  max_allocated_storage = var.db_max_allocated_storage
+  multi_az              = true
+  deletion_protection   = false
+  skip_final_snapshot   = true
+
+  tags = {
+    Environment = "dev"
+    Portfolio   = "true"
+  }
+}
