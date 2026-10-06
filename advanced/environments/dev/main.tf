@@ -30,3 +30,22 @@ module "load_balancer" {
     Portfolio   = "true"
   }
 }
+
+module "compute" {
+  source = "../../modules/compute"
+
+  name               = var.project_name
+  subnet_ids         = module.networking.app_subnet_ids
+  security_group_ids = [module.load_balancer.app_security_group_id]
+  target_group_arns  = [module.load_balancer.target_group_arn]
+
+  instance_type    = var.instance_type
+  min_size         = var.asg_min_size
+  desired_capacity = var.asg_desired_capacity
+  max_size         = var.asg_max_size
+
+  tags = {
+    Environment = "dev"
+    Portfolio   = "true"
+  }
+}
