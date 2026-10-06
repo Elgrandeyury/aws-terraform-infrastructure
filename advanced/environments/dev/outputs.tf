@@ -45,3 +45,20 @@ output "launch_template_id" {
 output "compute_iam_role_name" {
   value = module.compute.iam_role_name
 }
+
+output "db_endpoint" {
+  value = module.database.db_endpoint
+}
+
+output "db_port" {
+  value = module.database.db_port
+}
+
+output "db_security_group_id" {
+  value = module.database.db_security_group_id
+}
+
+output "db_master_secret_arn" {
+  value     = module.database.master_user_secret_arn
+  sensitive = true
+}
