@@ -1,0 +1,12 @@
+scan:
+  minimum_severity: low
+  ignore_paths:
+    - ".terraform/**"
+
+rules:
+  disabled: []
+
+ci:
+  # Public ALB ingress can be intentional in this architecture, so the first
+  # integration gates only on critical findings while still reporting highs.
+  fail_on: critical
